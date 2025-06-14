@@ -39,7 +39,7 @@ public class Workday
 
     private DateTime ConvertNonBusinessTimeToBusinessHours(DateTime currentDate)
     {
-        currentDate = IsOverWork(currentDate) ? new(
+        return IsOverWork(currentDate) ? new(
                 currentDate.Year,
                 currentDate.Month,
                 currentDate.Day,
@@ -54,27 +54,28 @@ public class Workday
                 _workdayStart.Minute,
                 _workdayStart.Second
             ) : currentDate;
-        return currentDate;
     }
 
     private DateTime AdjustHoursForOverAndEarlyWork(DateTime currentDate, DayOffset dayOffset)
     {
         if (!IsOverWork(currentDate) && !IsEarlyWork(currentDate)) return currentDate;
-
         DateTime nextDay = currentDate.AddDays((int)dayOffset);
 
+        //  business boundary time to subtract the additional time from
         DateTime businessBoundryTime = dayOffset == DayOffset.Next ? _workDayStop : _workdayStart;
+
+        // starting business time to set for the next/previous day
         DateTime nxtPrevDayBoundy = dayOffset == DayOffset.Next ? _workdayStart : _workDayStop;
 
-        TimeSpan additionalSecondsExceedingBusinessHours = currentDate.Subtract(new DateTime(currentDate.Year, currentDate.Month, currentDate.Day, businessBoundryTime.Hour, businessBoundryTime.Minute, businessBoundryTime.Second));
-        DateTime nextDayWithAdjustedBusinessHour = new(nextDay.Year, nextDay.Month, nextDay.Day, nxtPrevDayBoundy.Hour, nxtPrevDayBoundy.Minute, nxtPrevDayBoundy.Second);
-
+        TimeSpan extraTimeExceedingBusinessTime = currentDate.Subtract(new DateTime(currentDate.Year, currentDate.Month,
+                 currentDate.Day, businessBoundryTime.Hour, businessBoundryTime.Minute, businessBoundryTime.Second));
+        DateTime nextDayWithAdjustedBusinessHour = new(nextDay.Year, nextDay.Month, nextDay.Day, nxtPrevDayBoundy.Hour,
+                 nxtPrevDayBoundy.Minute, nxtPrevDayBoundy.Second);
         while (!_holiday.IsWorkDay(nextDayWithAdjustedBusinessHour))
         {
             nextDayWithAdjustedBusinessHour = nextDayWithAdjustedBusinessHour.AddDays((int)dayOffset);
         }
-        nextDayWithAdjustedBusinessHour = nextDayWithAdjustedBusinessHour.Add(additionalSecondsExceedingBusinessHours);
-        return nextDayWithAdjustedBusinessHour;
+        return nextDayWithAdjustedBusinessHour.Add(extraTimeExceedingBusinessTime);
     }
 
     public DateTime GetWorkDayIncrement(DateTime startWorkDay, float workDaysIncrement)
@@ -83,7 +84,6 @@ public class Workday
         {
             return startWorkDay;
         }
-
         DateTime currentDate = startWorkDay;
         int totalWorkingHours = _workDayStop.Hour - _workdayStart.Hour;
 
@@ -95,16 +95,25 @@ public class Workday
             currentDate = currentDate.AddDays((int)dayOffset);
             remainingDays = _holiday.IsWorkDay(currentDate) ? remainingDays - (int)dayOffset : remainingDays;
         }
-        //set the bounds for time, if the time is above work hours, then set 4:00pm, if before work hours then 8:00am, otherwise return date as it is
+
+        //set the bounds for time, if the time is above work hours, then set 4:00pm, if before work hours then 8:00am,
+        // otherwise return date as it is
         DateTime currentDateWithBusinessHours = ConvertNonBusinessTimeToBusinessHours(currentDate);
+
         // set the formula for adding seconds as per the increment count
         // take the after decimal part of increment count and multiply it with work hours and 3600.
         float workdayFraction = (float)(Math.Abs(workDaysIncrement) - Math.Abs((int)workDaysIncrement));
-        // this product gives the seconds to be added or subtracted from the current date time stamps.
+
+        // this product gives the seconds to be added or subtracted from the current date time.
         double secondsToAdd = totalWorkingHours * workdayFraction * 3600;
-        DateTime businessDayWithAddedHours = workDaysIncrement > 0 ? currentDateWithBusinessHours.AddSeconds(secondsToAdd) : currentDateWithBusinessHours.AddSeconds(-secondsToAdd);
-        DateTime businessDayWithAddedBusinessHours = AdjustHoursForOverAndEarlyWork(businessDayWithAddedHours, dayOffset);
+
+        DateTime businessDayWithAddedTime = workDaysIncrement > 0 ? currentDateWithBusinessHours.AddSeconds(secondsToAdd)
+                 : currentDateWithBusinessHours.AddSeconds(-secondsToAdd);
+        DateTime businessDayWithAddedBusinessHours = AdjustHoursForOverAndEarlyWork(businessDayWithAddedTime, dayOffset);
+
         // Rounding off seconds
-        return new(businessDayWithAddedBusinessHours.Year, businessDayWithAddedBusinessHours.Month, businessDayWithAddedBusinessHours.Day, businessDayWithAddedBusinessHours.Hour, businessDayWithAddedBusinessHours.Minute, 0);
+        return new(businessDayWithAddedBusinessHours.Year, businessDayWithAddedBusinessHours.Month,
+               businessDayWithAddedBusinessHours.Day, businessDayWithAddedBusinessHours.Hour,
+               businessDayWithAddedBusinessHours.Minute, 0);
     }
 }
