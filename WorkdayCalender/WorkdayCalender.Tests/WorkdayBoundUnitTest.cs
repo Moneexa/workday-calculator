@@ -1,12 +1,12 @@
+using System;
 using Xunit;
-
-namespace WorkdayCalculator.Tests
+namespace WorkdayCalender.Tests
 {
     public class WorkdayBoundsTests
     {
-        private Workday CreateDefaultWorkday()
+        private WorkDayCalender CreateDefaultWorkday()
         {
-            var workday = new Workday();
+            var workday = new WorkDayCalender();
             workday.SetWorkdayStartAndStop(
                 new DateTime(2025, 1, 1, 8, 0, 0),
                 new DateTime(2025, 1, 1, 16, 0, 0)

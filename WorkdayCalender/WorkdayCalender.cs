@@ -1,9 +1,10 @@
+using System;
 enum DayOffset
 {
     Next = 1,
     Prev = -1,
 }
-public class Workday
+public class WorkDayCalender
 {
     DateTime _workdayStart = new(); // start time of the working day
     DateTime _workDayStop = new(); // stop time of the working day

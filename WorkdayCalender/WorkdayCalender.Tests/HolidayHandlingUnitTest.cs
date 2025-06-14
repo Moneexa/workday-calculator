@@ -1,13 +1,13 @@
 using System;
 using Xunit;
 
-namespace WorkdayCalculator.Tests
+namespace WorkdayCalender.Tests
 {
     public class HolidayHandlingTests
     {
-        private static Workday CreateDefaultWorkday()
+        private static WorkDayCalender CreateDefaultWorkday()
         {
-            Workday workday = new();
+            WorkDayCalender workday = new();
             workday.SetWorkdayStartAndStop(
                 new(2025, 1, 1, 8, 0, 0),
                 new(2025, 1, 1, 16, 0, 0)
@@ -19,7 +19,7 @@ namespace WorkdayCalculator.Tests
         public void Long_Holidays()
         {
             // Arrange
-            var workday = new Workday();
+            var workday = new WorkDayCalender();
             workday.SetWorkdayStartAndStop(
             new DateTime(2004, 1, 1, 8, 0, 0),
             new DateTime(2004, 1, 1, 16, 0, 0));
@@ -103,7 +103,7 @@ namespace WorkdayCalculator.Tests
         public void Start_Weekend()
         {
             // Arrange
-            var workday = new Workday();
+            var workday = new WorkDayCalender();
             workday.SetWorkdayStartAndStop(
             new DateTime(2004, 1, 1, 8, 0, 0),
             new DateTime(2004, 1, 1, 16, 0, 0));
