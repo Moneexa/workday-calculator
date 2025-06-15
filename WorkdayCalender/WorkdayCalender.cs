@@ -26,8 +26,8 @@ public class WorkDayCalender
     }
     public void SetWorkdayStartAndStop(DateTime start, DateTime stop)
     {
-        _workdayStart = start;
-        _workDayStop = stop;
+        _workdayStart = new DateTime(1, 1, 1, start.Hour, 0, 0);
+        _workDayStop = new DateTime(1, 1, 1, stop.Hour, 0, 0);
     }
     private bool IsOverWork(DateTime currentDate)
     {

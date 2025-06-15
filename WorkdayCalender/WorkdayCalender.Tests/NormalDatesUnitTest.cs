@@ -5,76 +5,76 @@ namespace WorkdayCalender.Tests;
 
 public class NormalDatesUnitTests
 {
-    private static WorkDayCalender CreateDefaultWorkday()
+    private static WorkDayCalender CreateDefaultWorkdayCalender()
     {
-        var workday = new WorkDayCalender();
-        workday.SetWorkdayStartAndStop(
+        var workdayCalender = new WorkDayCalender();
+        workdayCalender.SetWorkdayStartAndStop(
         new DateTime(2004, 1, 1, 8, 0, 0),
         new DateTime(2004, 1, 1, 16, 0, 0));
-        workday.SetHoliday(new DateTime(2004, 5, 17, 0, 0, 0));
-        workday.SetRecurringHoliday(new DateTime(2004, 5, 27, 0, 0, 0));
-        return workday;
+        workdayCalender.SetHoliday(new DateTime(2004, 5, 17, 0, 0, 0));
+        workdayCalender.SetRecurringHoliday(new DateTime(2004, 5, 27, 0, 0, 0));
+        return workdayCalender;
     }
 
     [Fact]
-    public void Negative_Increment()
+    public void GetWorkDayIncrement_WithNegativeIncrementStartingAfterWorkday_ReturnsCorrectPreviousDate()
     {
         // Arrange
-        var workday = CreateDefaultWorkday();
+        var workdayCalender = CreateDefaultWorkdayCalender();
         DateTime start = new(2004, 5, 24, 18, 3, 0);
         float increment = -6.7470217f;
 
         // Act
-        var result = workday.GetWorkDayIncrement(start, increment);
+        var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
         // Assert
-        Assert.Equal(new DateTime(2004, 05, 13, 10, 01, 0), result);
+        Assert.Equal(new DateTime(2004, 5, 13, 10, 1, 0), result);
     }
 
     [Fact]
-    public void Negative_Increment_WithEarly_Hour()
+    public void GetWorkDayIncrement_WithNegativeIncrementStartingBeforeWorkday_ReturnsCorrectPreviousDate()
     {
         // Arrange
-        var workday = CreateDefaultWorkday();
+        var workdayCalender = CreateDefaultWorkdayCalender();
 
         DateTime start = new(2004, 5, 24, 7, 3, 0);
         float increment = -6.7470217f;
 
         // Act
-        var result = workday.GetWorkDayIncrement(start, increment);
+        var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
         // Assert
-        Assert.Equal(new DateTime(2004, 05, 12, 10, 01, 0), result);
+        Assert.Equal(new DateTime(2004, 05, 12, 10, 1, 0), result);
     }
 
 
     [Fact]
 
 
-    public void Long_Positive_Increment()
+    public void GetWorkDayIncrement_WithLargePositiveIncrementSpanningMultipleMonths_ReturnsCorrectFutureDateTime()
     {
         // Arrange
-        var workday = CreateDefaultWorkday();
+        var workdayCalender = CreateDefaultWorkdayCalender();
 
         DateTime start = new(2004, 5, 24, 19, 3, 0);
         float increment = 44.723656f;
 
         // Act
-        var result = workday.GetWorkDayIncrement(start, increment);
+        var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
         // Assert
         Assert.Equal(new DateTime(2004, 07, 27, 13, 47, 0), result);
     }
 
     [Fact]
-    public void Unusual_Time()
+    public void GetWorkDayIncrement_WithInvalidTime_ThrowsArgumentOutOfRangeException()
     {
         // Arrange
-        var workday = new WorkDayCalender();
+        var workdayCalender = CreateDefaultWorkdayCalender();
         float increment = 44.723656f;
 
         // Assert
         Assert.Throws<ArgumentOutOfRangeException>(
-        () => workday.GetWorkDayIncrement(new DateTime(2004, 5, 24, 24, 100, 0), increment));
+        () => workdayCalender.GetWorkDayIncrement(new DateTime(2004, 5, 24, 24, 100, 0), increment));
     }
 }

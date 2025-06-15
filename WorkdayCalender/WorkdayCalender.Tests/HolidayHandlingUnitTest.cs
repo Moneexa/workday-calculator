@@ -5,122 +5,134 @@ namespace WorkdayCalender.Tests
 {
     public class HolidayHandlingTests
     {
-        private static WorkDayCalender CreateDefaultWorkday()
+        private static WorkDayCalender CreateDefaultWorkdayCalender()
         {
-            WorkDayCalender workday = new();
-            workday.SetWorkdayStartAndStop(
+            WorkDayCalender workDayCalender = new();
+            workDayCalender.SetWorkdayStartAndStop(
                 new(2025, 1, 1, 8, 0, 0),
                 new(2025, 1, 1, 16, 0, 0)
             );
-            return workday;
+            return workDayCalender;
         }
 
         [Fact]
-        public void Long_Holidays()
+        public void GetWorkDayIncrement_WithLongHolidaySequence_ReturnsSkippingAllHolidays()
         {
             // Arrange
-            var workday = new WorkDayCalender();
-            workday.SetWorkdayStartAndStop(
-            new DateTime(2004, 1, 1, 8, 0, 0),
-            new DateTime(2004, 1, 1, 16, 0, 0));
-            workday.SetHoliday(new(2004, 5, 28, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 5, 27, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 5, 31, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 6, 1, 0, 0, 0));
+            var workdayCalender = CreateDefaultWorkdayCalender();
+            workdayCalender.SetHoliday(new(2004, 5, 28, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 5, 27, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 5, 31, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 6, 1, 0, 0, 0));
 
             DateTime start = new(2004, 5, 24, 8, 3, 0);
             float increment = 5.5f;
 
             // Act
-            var result = workday.GetWorkDayIncrement(start, increment);
+            var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
             // Assert
             Assert.Equal(new DateTime(2004, 06, 04, 12, 3, 0), result);
         }
         [Fact]
-        public void Empty_Holidays_SimpleIncrement()
+        public void GetWorkDayIncrement_WithNoHolidaysAndOneDayIncrement_ReturnsNextWorkdayStart()
         {
             // Arrange
-            var workday = CreateDefaultWorkday();
+            var workdayCalender = CreateDefaultWorkdayCalender();
             DateTime start = new(2025, 6, 10, 8, 0, 0); // Tuesday
             float increment = 1.0f;
 
             // Act
-            var result = workday.GetWorkDayIncrement(start, increment);
+            var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
             // Assert: next workday is Wednesday, June 11 at 08:00
             Assert.Equal(new DateTime(2025, 6, 11, 8, 0, 0), result);
         }
 
         [Fact]
-        public void Duplicate_Holidays_Are_Idempotent()
+        public void GetWorkDayIncrement_WithDuplicateHolidays_SkipsEachOnlyOnce()
         {
             // Arrange
-            var workday = CreateDefaultWorkday();
+            var workdayCalender = CreateDefaultWorkdayCalender();
             var holiday = new DateTime(2025, 6, 12);
-            workday.SetHoliday(holiday);
-            workday.SetHoliday(holiday);
+            workdayCalender.SetHoliday(holiday);
+            workdayCalender.SetHoliday(holiday);
 
             var start = new DateTime(2025, 6, 11, 8, 0, 0); // Thursday
             float increment = 1.0f;
 
             // Act
-            var result = workday.GetWorkDayIncrement(start, increment);
+            var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
             // Assert: skips only 12th once, lands on 13th
             Assert.Equal(new DateTime(2025, 6, 13, 8, 0, 0), result);
         }
 
         [Fact]
-        public void Recurring_LeapDay_Skipped_In_NonLeap()
+        public void GetWorkDayIncrement_WithRecurringFeb29InNonLeapYear_SkipsToMarchFirst()
         {
             // Arrange
-            var workday = CreateDefaultWorkday();
-            workday.SetRecurringHoliday(new DateTime(2000, 2, 29));
+            var workdayCalender = CreateDefaultWorkdayCalender();
+            workdayCalender.SetRecurringHoliday(new DateTime(2000, 2, 29));
 
             var start = new DateTime(2024, 2, 28, 8, 0, 0); // 2024 is leap year
             float increment = 2.0f;
 
             // Act
-            var result = workday.GetWorkDayIncrement(start, increment);
+            var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
             // Assert: 29th is recurring holiday, so lands on March 1st
             Assert.Equal(new DateTime(2024, 3, 1, 8, 0, 0), result);
         }
 
         [Fact]
-        public void SetHoliday_Invalid_Feb29_NonLeap_Throws()
+        public void SetHoliday_WithNonLeapYearFeb29_ThrowsArgumentOutOfRangeException()
         {
             // Arrange
-            var workday = CreateDefaultWorkday();
+            var workdayCalender = CreateDefaultWorkdayCalender();
 
             // Act & Assert
             Assert.Throws<ArgumentOutOfRangeException>(
-                () => workday.SetHoliday(new DateTime(2025, 2, 29))
+                () => workdayCalender.SetHoliday(new DateTime(2025, 2, 29))
             );
         }
         [Fact]
-        public void Start_Weekend()
+        public void GetWorkDayIncrement_WithStartOnWeekendAndHolidays_ReturnsCorrectDate()
         {
             // Arrange
-            var workday = new WorkDayCalender();
-            workday.SetWorkdayStartAndStop(
-            new DateTime(2004, 1, 1, 8, 0, 0),
-            new DateTime(2004, 1, 1, 16, 0, 0));
-            workday.SetHoliday(new(2004, 5, 28, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 5, 27, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 5, 31, 0, 0, 0));
-            workday.SetRecurringHoliday(new(2004, 6, 1, 0, 0, 0));
+            var workdayCalender = CreateDefaultWorkdayCalender();
+            workdayCalender.SetHoliday(new(2004, 5, 28, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 5, 27, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 5, 31, 0, 0, 0));
+            workdayCalender.SetRecurringHoliday(new(2004, 6, 1, 0, 0, 0));
 
             DateTime start = new(2004, 5, 22, 8, 3, 0);
             float increment = 5.5f;
 
             // Act
-            var result = workday.GetWorkDayIncrement(start, increment);
+            var result = workdayCalender.GetWorkDayIncrement(start, increment);
 
             // Assert
             Assert.Equal(new DateTime(2004, 06, 03, 12, 3, 0), result);
         }
+        [Fact]
+        public void GetWorkDayIncrement_WithStartOnYearEndWithHolidays_ReturnsNextYearWorkDay()
+        {
+            // Arrange
+            var workdayCalender = CreateDefaultWorkdayCalender();
+            workdayCalender.SetRecurringHoliday(new DateTime(2024, 1, 1));
+            workdayCalender.SetHoliday(new DateTime(2026, 1, 2));
+
+            var atStop = new DateTime(2025, 12, 31, 16, 0, 0);
+            float increment = 0.01f;
+
+            // Act
+            var result = workdayCalender.GetWorkDayIncrement(atStop, increment);
+
+            // Assert: moves to next workday's start
+            Assert.Equal(new DateTime(2026, 1, 5, 8, 4, 0), result);
+        }
+
 
     }
 }
